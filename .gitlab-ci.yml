@@ -1,0 +1,60 @@
+stages:
+  - test
+  - dev
+  - prod
+before_script:
+    - pwd
+    - hostname
+    - ip a
+    - id
+test:
+  stage: test
+  tags:
+    - test
+  variables:
+    HOSTS: 10.0.0.13
+    GIT_STRATEGY: clone
+  script:
+    - echo "===========deploy to test server=================="
+    - pwd && source /home/gitlab-runner/.bashrc 
+    - nvm use 16 && npm install && npm run build:staging
+    - rsync -av --delete dist $HOSTS:/home/wwwroot/admin/
+    - curl -X POST "https://api.telegram.org/bot1774423782:AAFRKE1ABG_HoOylvLM4kmvCYmOO3By7VXM/sendMessage" -d "chat_id=-715137100&text=Pinse-admin 测试服已更新   '触发者':$GITLAB_USER_NAME      '提交信息':$CI_COMMIT_MESSAGE"
+  only:
+    refs:
+      - test
+
+dev:
+  stage: dev
+  tags:
+    - dev
+  variables:
+    HOSTS: 10.0.0.5
+    GIT_STRATEGY: clone
+  script:
+    - echo "===========deploy to dev server=================="
+    - pwd && source /home/gitlab-runner/.bashrc 
+    - nvm use 16 && npm install && npm run build:dev
+    - rsync -av --delete dist $HOSTS:/home/wwwroot/admin/
+    - curl -X POST "https://api.telegram.org/bot1774423782:AAFRKE1ABG_HoOylvLM4kmvCYmOO3By7VXM/sendMessage" -d "chat_id=-715137100&text=Pinse-admin Dev环境已更新   '触发者':$GITLAB_USER_NAME      '提交信息':$CI_COMMIT_MESSAGE"
+  only:
+    refs:
+      - dev
+
+prod:
+  stage: prod
+  tags:
+    - prod
+  variables:
+    HOSTS: 10.0.0.14
+    GIT_STRATEGY: clone
+  script:
+    - echo "===========deploy to test server=================="
+    - pwd && source /home/gitlab-runner/.bashrc 
+    - nvm use 16 && npm install && npm run build
+    - rsync -av --delete dist $HOSTS:/home/wwwroot/admin/
+    - curl -X POST "https://api.telegram.org/bot1774423782:AAFRKE1ABG_HoOylvLM4kmvCYmOO3By7VXM/sendMessage" -d "chat_id=-715137100&text=Pinse-admin 生产服已更新   '触发者':$GITLAB_USER_NAME      '提交信息':$CI_COMMIT_MESSAGE"
+  only:
+    refs:
+      - main
+  when: manual
